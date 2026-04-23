@@ -12,8 +12,8 @@ const STORAGE_KEYS = {
 
 async function loadData(key, fallback) {
   try {
-    const res = await window.storage.get(key);
-    return res ? JSON.parse(res.value) : fallback;
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
     return fallback;
   }
@@ -21,7 +21,7 @@ async function loadData(key, fallback) {
 
 async function saveData(key, data) {
   try {
-    await window.storage.set(key, JSON.stringify(data));
+    localStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
     console.error("Storage error:", e);
   }
@@ -40,6 +40,16 @@ const PROBLEM_BANK = {
     { id: "p8", title: "Monty Hall Variant", desc: "There are 100 doors with one prize. You pick one, the host opens 98 empty doors. Should you switch?", hint: "Generalize the classic Monty Hall.", answer: "Yes, switch. P(win) = 99/100" },
     { id: "p9", title: "Ballot Problem", desc: "Candidate A gets a votes, B gets b votes (a > b). What's the probability A is strictly ahead throughout the count?", hint: "Reflection principle.", answer: "(a-b)/(a+b)" },
     { id: "p10", title: "Hat Problem", desc: "N people throw their hats in a pile and each picks one randomly. What is the expected number of people who get their own hat?", hint: "Linearity of expectation.", answer: "1, for any N" },
+    { id: "p11", title: "Bayes' Disease Test", desc: "A disease affects 1% of the population. A test is 99% accurate (both sensitivity and specificity). You test positive. What is the probability you actually have the disease?", hint: "P(disease|positive) = P(positive|disease)×P(disease) / P(positive)", answer: "≈ 50%. P = (0.99×0.01)/(0.99×0.01 + 0.01×0.99) = 0.5" },
+    { id: "p12", title: "St. Petersburg Paradox", desc: "A fair coin is flipped until heads appears. You win $2^n where n is the flip number. What is the expected payout? Why won't rational people pay much to play?", hint: "E = Σ (1/2^n)·(2^n) for n=1 to ∞.", answer: "E = ∞, but due to logarithmic utility, a fair price is roughly $20–$25 for most people." },
+    { id: "p13", title: "Geometric Expected Value", desc: "You roll a fair die repeatedly until you get a 6. What are the expected number of rolls and the variance?", hint: "Geometric(p=1/6): E=1/p, Var=(1-p)/p².", answer: "E = 6, Var = 30, SD ≈ 5.48" },
+    { id: "p14", title: "Poisson Probability", desc: "A Poisson process has rate λ=3 events per minute. What is the probability of exactly 5 events in one minute?", hint: "P(X=k) = e^{-λ}·λ^k / k!", answer: "e^{-3}·3^5/5! = 243e^{-3}/120 ≈ 0.1008" },
+    { id: "p15", title: "Total Expectation", desc: "A fair coin is flipped. If heads, you roll a d6; if tails, you roll a d12. What is the expected result?", hint: "E[X] = E[X|H]P(H) + E[X|T]P(T).", answer: "E = 3.5×0.5 + 6.5×0.5 = 5" },
+    { id: "p16", title: "Secretary Problem", desc: "You interview n candidates sequentially and must immediately hire or reject each. What strategy maximizes the probability of selecting the best candidate?", hint: "Optimal: skip the first r* candidates, then hire the next one better than all seen so far.", answer: "Skip first n/e ≈ 37%, then pick the next new best. Optimal P → 1/e ≈ 36.8%" },
+    { id: "p17", title: "Two Envelopes", desc: "Two envelopes contain $X and $2X. You open one and see $100. The other has either $200 or $50 with equal probability — so E[switch] = $125. Should you switch?", hint: "Think about whether equal probability of double/half is consistent with any valid prior on X.", answer: "No edge to switching. The calculation is flawed: you cannot assign equal probability to both cases without an improper prior on X." },
+    { id: "p18", title: "Buffon's Needle", desc: "A needle of length L is dropped randomly on a floor with parallel lines spaced D apart (L ≤ D). What is the probability it crosses a line?", hint: "Integrate over the drop angle θ ∈ [0, π] and the distance from the nearest line.", answer: "P = 2L/(πD)" },
+    { id: "p19", title: "Order Statistics", desc: "X₁, X₂, X₃ are i.i.d. Uniform(0,1). What are the expected values of the maximum, the median, and the minimum?", hint: "E[X_(k:n)] = k/(n+1) for uniform order statistics.", answer: "E[min]=1/4, E[median]=2/4=1/2, E[max]=3/4" },
+    { id: "p20", title: "Hypergeometric Draw", desc: "An urn has 5 red and 5 blue balls. You draw 3 without replacement. What is the probability of exactly 2 red?", hint: "Hypergeometric: C(5,2)×C(5,1)/C(10,3).", answer: "C(5,2)×C(5,1)/C(10,3) = 10×5/120 = 50/120 = 5/12 ≈ 0.4167" },
   ],
   sequences: [
     { id: "s1", title: "Fibonacci Mod", desc: "What is the last digit of the 100th Fibonacci number?", hint: "Pisano period for mod 10 is 60.", answer: "5" },
@@ -47,13 +57,23 @@ const PROBLEM_BANK = {
     { id: "s3", title: "Geometric Series Twist", desc: "Evaluate: Σ(k=1 to ∞) k·x^k for |x|<1.", hint: "Differentiate the geometric series.", answer: "x/(1-x)²" },
     { id: "s4", title: "Recurrence Relation", desc: "Solve: a(n) = 5a(n-1) - 6a(n-2) with a(0)=1, a(1)=1.", hint: "Characteristic equation: r²-5r+6=0.", answer: "a(n) = 3·2^n - 2·3^n... verify boundary" },
     { id: "s5", title: "Catalan Numbers", desc: "How many valid arrangements of n pairs of parentheses exist? Express as a formula.", hint: "C(2n,n)/(n+1).", answer: "C(2n,n)/(n+1)" },
+    { id: "s6", title: "Sum of Cubes", desc: "Find a closed form for 1³ + 2³ + ... + n³.", hint: "Notice the surprising identity involving triangular numbers.", answer: "[n(n+1)/2]² — the square of the n-th triangular number" },
+    { id: "s7", title: "Alternating Harmonic Series", desc: "Evaluate: 1 − 1/2 + 1/3 − 1/4 + ... to infinity.", hint: "Related to the Taylor series of ln(1+x) evaluated at x=1.", answer: "ln(2) ≈ 0.6931" },
+    { id: "s8", title: "Arithmetico-Geometric Series", desc: "Evaluate Σ_{k=1}^∞ k/2^k (i.e. 1/2 + 2/4 + 3/8 + 4/16 + ...).", hint: "Differentiate the geometric series Σ x^k with respect to x, then set x=1/2.", answer: "2 (use x/(1-x)² evaluated at x=1/2)" },
+    { id: "s9", title: "Basel Problem", desc: "What is the exact sum of 1 + 1/4 + 1/9 + 1/16 + ... = Σ 1/n²?", hint: "Euler compared the Taylor series of sin(x)/x with its product form over roots.", answer: "π²/6 ≈ 1.6449" },
+    { id: "s10", title: "Tribonacci Sequence", desc: "The Tribonacci sequence starts 0, 0, 1 with T(n) = T(n-1)+T(n-2)+T(n-3). What is T(10)?", hint: "Extend term by term from the start.", answer: "T(10) = 149. Sequence: 0,0,1,1,2,4,7,13,24,44,81,149..." },
   ],
   combinatorics: [
     { id: "c1", title: "Derangements", desc: "How many permutations of {1,...,n} have no fixed points? Give the formula.", hint: "Inclusion-exclusion on fixed points.", answer: "n! Σ(-1)^k/k! for k=0..n" },
     { id: "c2", title: "Stars and Bars", desc: "How many non-negative integer solutions exist for x₁ + x₂ + x₃ = 10?", hint: "Stars and bars formula.", answer: "C(12,2) = 66" },
     { id: "c3", title: "Grid Paths", desc: "How many shortest paths exist from (0,0) to (m,n) on a grid, moving only right or up?", hint: "Choose which steps go right.", answer: "C(m+n, m)" },
     { id: "c4", title: "Pigeonhole Application", desc: "Given 5 points with integer coordinates in the plane, prove that at least one pair has a midpoint with integer coordinates.", hint: "Consider parity of (x,y).", answer: "4 parity classes for (x mod 2, y mod 2), 5 points → pigeonhole" },
-    { id: "c5", title: "Handshake Lemma", desc: "At a party of 10 people, each shakes hands with exactly 3 others. Is this possible?", hint: "Sum of degrees must be even.", answer: "No. 10×3=30 handshakes counted... 30/2=15. Wait, yes it's possible (30 is even)." },
+    { id: "c5", title: "Handshake Lemma", desc: "At a party of 10 people, each shakes hands with exactly 3 others. Is this possible?", hint: "Sum of degrees must be even.", answer: "Yes. 10×3=30, and 30 is even, so the sum of degrees is valid. (e.g., two disjoint 5-cycles each with chords)" },
+    { id: "c6", title: "Inclusion-Exclusion (3 sets)", desc: "100 students: 70 like Math, 60 like Science, 50 like Art. 40 like Math+Science, 35 like Math+Art, 30 like Science+Art. 20 like all three. How many like at least one subject?", hint: "|A∪B∪C| = |A|+|B|+|C| − |A∩B| − |A∩C| − |B∩C| + |A∩B∩C|.", answer: "70+60+50−40−35−30+20 = 95" },
+    { id: "c7", title: "Circular Arrangements", desc: "In how many distinct ways can 6 people sit around a circular table (rotations counted as the same)?", hint: "Fix one person to remove rotational equivalence.", answer: "(6−1)! = 5! = 120" },
+    { id: "c8", title: "Multiset Permutations", desc: "How many distinct arrangements of the letters in MISSISSIPPI are there?", hint: "n!/(n₁!·n₂!·...) for repeated letters. Count each letter's frequency.", answer: "11!/(4!·4!·2!·1!) = 34,650" },
+    { id: "c9", title: "Partition into Groups", desc: "How many ways can 9 people be split into 3 indistinguishable groups of 3?", hint: "Divide by 3! to remove the ordering of the groups.", answer: "C(9,3)·C(6,3)·C(3,3) / 3! = 84·20·1/6 = 280" },
+    { id: "c10", title: "Compositions of n", desc: "In how many ways can the integer 5 be written as an ordered sum of positive integers (e.g., 2+3 ≠ 3+2)?", hint: "Each composition of n corresponds to a subset of {1,...,n−1}.", answer: "2^(5−1) = 16" },
   ],
   estimation: [
     { id: "e1", title: "Piano Tuners", desc: "How many piano tuners are in Chicago?", hint: "Fermi estimation: population → pianos → tuning frequency → tuners needed.", answer: "~100-300 (classic Fermi)" },
@@ -61,6 +81,11 @@ const PROBLEM_BANK = {
     { id: "e3", title: "√2 Approximation", desc: "Estimate √2 to 4 decimal places without a calculator.", hint: "Newton's method: x_{n+1} = (x_n + 2/x_n)/2.", answer: "1.4142" },
     { id: "e4", title: "Log Estimation", desc: "Estimate ln(50) without a calculator.", hint: "ln(50) = ln(100/2) = ln(100) - ln(2).", answer: "≈ 3.912" },
     { id: "e5", title: "Market Cap", desc: "Estimate the total revenue of all McDonald's restaurants in the US per year.", hint: "# locations × avg revenue per location.", answer: "~$40-50B" },
+    { id: "e6", title: "US Gas Stations", desc: "Estimate the number of gas stations in the United States.", hint: "Consider US population, vehicle ownership rate, fill-up frequency, and average throughput per station per day.", answer: "~150,000 (actual: ~145,000)" },
+    { id: "e7", title: "Words Spoken Per Day", desc: "Estimate the average number of words a person speaks per day.", hint: "Waking hours × fraction spent talking × speaking rate (~130 words/min).", answer: "~16,000 words/day (studies find range of 7,000–25,000)" },
+    { id: "e8", title: "Stack of Bills to the Moon", desc: "If you stacked $1 bills to reach the Moon (384,000 km away), how much money would that be?", hint: "A US $1 bill is approximately 0.1 mm thick.", answer: "384×10⁹ mm / 0.1 mm = 3.84×10¹² bills = $3.84 trillion" },
+    { id: "e9", title: "NYC Taxi Annual Revenue", desc: "Estimate the gross annual revenue of a single NYC taxi driver.", hint: "Estimate shifts per week, hours per shift, fares per hour, and average fare.", answer: "~$75,000–$100,000 gross revenue/year before expenses" },
+    { id: "e10", title: "Red Blood Cells in Body", desc: "Estimate the number of red blood cells in the human body.", hint: "Blood volume (~5 L) × RBC density (~5 million per mL).", answer: "~25 trillion (5 L × 5×10⁶/mL = 2.5×10¹³)" },
   ],
   mental_tricks: [
     { id: "m1", title: "Squaring Near 50", desc: "Calculate 47² mentally.", hint: "47² = (50-3)² = 2500 - 300 + 9.", answer: "2209" },
@@ -68,6 +93,11 @@ const PROBLEM_BANK = {
     { id: "m3", title: "Divisibility by 7", desc: "Is 2744 divisible by 7? Find a fast mental check.", hint: "Double the last digit, subtract from the rest.", answer: "Yes (2744 = 7 × 392 = 14³)" },
     { id: "m4", title: "Cross Multiplication", desc: "Calculate 23 × 47 mentally.", hint: "23×47 = 23×50 - 23×3 = 1150 - 69.", answer: "1081" },
     { id: "m5", title: "Percentage Trick", desc: "Calculate 37% of 84 mentally.", hint: "37% of 84 = 84% of 37 (commutativity).", answer: "31.08" },
+    { id: "m6", title: "Squaring Numbers Ending in 5", desc: "Calculate 85² mentally.", hint: "For n5²: take n×(n+1), then append 25. Here n=8.", answer: "7225. (8×9=72, append 25)" },
+    { id: "m7", title: "Near-100 Multiplication", desc: "Calculate 97 × 96 mentally.", hint: "(100−a)(100−b) = 10000 − 100(a+b) + ab.", answer: "9312. (a=3, b=4: 10000−700+12=9312)" },
+    { id: "m8", title: "Casting Out Nines", desc: "Use casting out nines to check: is 3456 × 78 = 269,568 plausible?", hint: "Replace each number by its digit sum (mod 9) and verify the product matches.", answer: "3456→(3+4+5+6)=18→0; 78→15→6; 0×6=0 mod 9. 269568→(2+6+9+5+6+8)=36→0. Consistent. (Not proof, but a quick sanity check.)" },
+    { id: "m9", title: "Rule of 72", desc: "An investment grows at 8% per year. About how many years until it doubles?", hint: "Rule of 72: years ≈ 72 / annual rate.", answer: "72/8 = 9 years (exact: ln2/ln1.08 ≈ 9.0 years)" },
+    { id: "m10", title: "Fast Fraction to Decimal", desc: "Convert 7/11 to a decimal mentally.", hint: "1/11 = 0.090909..., so multiply by 7.", answer: "0.6̄3̄ = 0.636363... (repeating 63)" },
   ],
   brainteasers: [
     { id: "b1", title: "100 Lockers", desc: "100 students toggle lockers 1-100. Student k toggles every k-th locker. Which lockers are open at the end?", hint: "A locker is toggled once per divisor.", answer: "Perfect squares: 1,4,9,16,25,36,49,64,81,100" },
@@ -75,6 +105,11 @@ const PROBLEM_BANK = {
     { id: "b3", title: "Two Egg Problem", desc: "You have 2 eggs and a 100-floor building. Find the highest safe floor with minimum worst-case drops.", hint: "Optimize: if first egg breaks at floor k, you need k-1 more checks.", answer: "14 drops (triangular numbers: 14+13+12+...)" },
     { id: "b4", title: "Prisoner Hat Problem", desc: "100 prisoners in a line each see hats ahead. They guess their own hat color (B/W). One strategy guarantees 99 survive. What is it?", hint: "First person encodes parity.", answer: "First person calls parity of black hats seen. Each subsequent deduces from heard answers." },
     { id: "b5", title: "12 Balls Problem", desc: "12 balls, one is different weight. 3 weighings on a balance scale to find which and whether heavier/lighter.", hint: "Ternary encoding.", answer: "Split 4-4-4, then narrow with relabeling strategy" },
+    { id: "b6", title: "3 Light Switches", desc: "Three switches outside a room each control one of three bulbs inside. You may enter the room only once. How do you identify which switch controls which bulb?", hint: "You have three observable states for each bulb — think beyond on/off.", answer: "Turn switch 1 on for 10 min, then off. Turn switch 2 on. Enter: hot+off=switch 1, on=switch 2, cold+off=switch 3." },
+    { id: "b7", title: "Burning Ropes", desc: "Two ropes each take exactly 60 minutes to burn (but burn unevenly). How do you measure exactly 45 minutes using only these ropes and a lighter?", hint: "Lighting both ends of a rope halves the remaining burn time.", answer: "Light rope 1 from both ends and rope 2 from one end simultaneously. When rope 1 finishes (30 min), light rope 2's other end — it burns out in 15 more minutes. Total: 45 min." },
+    { id: "b8", title: "9 Coins, 2 Weighings", desc: "You have 9 coins; one is lighter than the rest. Find the counterfeit coin in exactly 2 weighings on a balance scale.", hint: "Divide into three groups of equal size.", answer: "Split into 3 groups of 3. Weigh group A vs B. If balanced, the counterfeit is in group C; otherwise it's in the lighter group. Weigh 2 of the 3 suspects — if balanced, the third is counterfeit; otherwise the lighter pan holds it." },
+    { id: "b9", title: "Water Jug Problem", desc: "You have a 3L jug and a 5L jug and unlimited water. Measure exactly 4 liters.", hint: "Fill one, pour into the other, empty when full, repeat.", answer: "Fill 5L → pour into 3L (3L full, 2L left) → empty 3L → pour 2L into 3L → fill 5L → pour into 3L until full (1L poured) → 4L remains in 5L." },
+    { id: "b10", title: "Ants on a Pole", desc: "100 ants are placed randomly on a 1-metre pole. Each walks at 1 cm/s in a random direction. When two ants collide they reverse direction. When does the last ant fall off?", hint: "Ants passing through each other is equivalent to reversing — what does each 'ant' actually represent?", answer: "At most 100 seconds. Treat collisions as pass-throughs: each position just moves to an end, so the longest possible journey is 100 s regardless of starting positions or collisions." },
   ],
 };
 
@@ -137,7 +172,6 @@ export default function App() {
 
   return (
     <div style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", background: "#0a0a0f", color: "#d4d4d8", minHeight: "100vh" }}>
-      <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
       <header style={{ borderBottom: "1px solid #1e1e2e", padding: "16px 24px", display: "flex", alignItems: "center", gap: 24, background: "#0d0d14" }}>
         <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700, color: "#f0f0f5", margin: 0, letterSpacing: "-0.5px" }}>
           <span style={{ color: "#6366f1" }}>Q</span>uant <span style={{ color: "#6366f1" }}>P</span>rep
