@@ -125,6 +125,1366 @@ const CATEGORY_COLORS = {
 // Fix the estimation color
 CATEGORY_COLORS.estimation = { dark: "#d31f11", light: "#f47a00" };
 
+// ─── LEARN MODULES ───
+const LEARN_MODULES = [
+  {
+    id: "python-essentials",
+    title: "Python Essentials",
+    subtitle: "Comprehensions, generators, decorators, and the standard library",
+    difficulty: "Intermediate",
+    category: "Python",
+    sections: [
+      {
+        title: "List Comprehensions & Generator Expressions",
+        content: "List comprehensions build lists concisely and are typically faster than equivalent for-loops. Generator expressions use () instead of [] and are lazy — they produce values on demand without storing the full list in memory.",
+        code: `# List comprehension
+squares = [x**2 for x in range(10)]
+# [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+# With filtering
+evens = [x for x in range(20) if x % 2 == 0]
+
+# Flatten a 2D matrix
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+flat = [val for row in matrix for val in row]
+
+# Dict and set comprehensions
+word_lens = {w: len(w) for w in ["alpha","beta","gamma"]}
+unique_mods = {x % 3 for x in range(15)}  # {0, 1, 2}
+
+# Generator expression — lazy, no list built in memory
+total = sum(x**2 for x in range(10**7))  # uses ~constant memory`,
+        note: "Use generator expressions when you only iterate once over large data. Use list comprehensions when you need random access or multiple passes."
+      },
+      {
+        title: "Generators & yield",
+        content: "A generator function uses yield to produce values one at a time. This enables infinite sequences and memory-efficient pipelines.",
+        code: `def fibonacci():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+gen = fibonacci()
+first_10 = [next(gen) for _ in range(10)]
+# [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+
+# yield from — delegate to a sub-generator
+def chain(*iterables):
+    for it in iterables:
+        yield from it
+
+list(chain([1,2],[3,4],[5]))  # [1, 2, 3, 4, 5]
+
+# Walrus operator (:=) in Python 3.8+
+import re
+if m := re.search(r'\\d+', 'abc123'):
+    print(m.group())  # '123'`,
+        note: "For LeetCode, generators appear less directly — but itertools (built on generators) is invaluable: islice, groupby, product, combinations, permutations."
+      },
+      {
+        title: "Decorators & lru_cache",
+        content: "A decorator wraps a function to add behavior. @functools.lru_cache is the most important decorator for competitive programming — it adds memoization to any function.",
+        code: `from functools import lru_cache, cache
+
+# @cache is @lru_cache(maxsize=None) — Python 3.9+
+@cache
+def fib(n):
+    if n < 2: return n
+    return fib(n-1) + fib(n-2)
+
+fib(100)  # instant — O(n) with memoization vs O(2^n) without
+
+# Custom decorator — timer
+import time
+def timer(func):
+    def wrapper(*args, **kwargs):
+        t = time.perf_counter()
+        result = func(*args, **kwargs)
+        print(f"{func.__name__}: {time.perf_counter()-t:.4f}s")
+        return result
+    return wrapper
+
+@timer
+def slow(n): return sum(range(n))
+
+# Closure — function capturing outer scope
+def make_adder(n):
+    def add(x): return x + n  # captures n
+    return add
+
+add5 = make_adder(5)
+add5(3)  # 8`,
+        note: "@cache is your go-to for recursive DP. One caveat: it keeps all results in memory forever. Call fib.cache_clear() if memory is a concern."
+      },
+      {
+        title: "Collections & itertools",
+        content: "The collections and itertools modules are essential for algorithmic problems. Learn these by heart.",
+        code: `from collections import defaultdict, Counter, deque
+from itertools import accumulate, combinations, permutations
+
+# defaultdict — auto-creates missing keys
+graph = defaultdict(list)
+graph[0].append(1)  # no KeyError
+
+# Counter — frequency map with arithmetic
+freq = Counter("mississippi")
+# Counter({'s':4,'i':4,'p':2,'m':1})
+freq.most_common(2)   # [('s',4),('i',4)]
+
+# deque — O(1) at both ends (list.insert(0,...) is O(n))
+dq = deque([1,2,3])
+dq.appendleft(0)   # [0,1,2,3]
+dq.popleft()       # 0, O(1)
+
+# accumulate — prefix sums in one line
+from itertools import accumulate
+prefix = list(accumulate([1,2,3,4,5]))
+# [1, 3, 6, 10, 15]
+
+# combinations / permutations
+list(combinations([1,2,3], 2))
+# [(1,2),(1,3),(2,3)]
+list(permutations([1,2,3], 2))
+# [(1,2),(1,3),(2,1),(2,3),(3,1),(3,2)]`,
+        note: "For sliding window problems, deque is indispensable for maintaining a monotonic window in O(n). Counter subtraction (a - b) removes zero/negative counts automatically."
+      },
+      {
+        title: "Sorting & bisect",
+        content: "Python's sort is Timsort — O(n log n) worst case, O(n) on nearly sorted data. bisect provides binary search insertion points on sorted lists.",
+        code: `import bisect
+
+arr = [1, 3, 5, 7, 9]
+bisect.bisect_left(arr, 5)    # 2 — leftmost index for 5
+bisect.bisect_right(arr, 5)   # 3 — rightmost index + 1
+bisect.insort(arr, 6)         # insert 6, maintaining order
+
+# Count occurrences in sorted array
+lo = bisect.bisect_left(arr, 5)
+hi = bisect.bisect_right(arr, 5)
+count = hi - lo  # O(log n)
+
+# Sort with key function
+intervals = [(1,5),(2,3),(1,2)]
+intervals.sort(key=lambda x: (x[0], x[1]))
+
+# Custom comparator with cmp_to_key (e.g. Largest Number problem)
+from functools import cmp_to_key
+def cmp(a, b):
+    return -1 if str(a)+str(b) > str(b)+str(a) else 1
+nums = [3, 30, 34, 5, 9]
+nums.sort(key=cmp_to_key(cmp))  # [9,5,34,3,30] → "9534330"`,
+        note: "bisect_left and bisect_right are your binary search primitives. Many 'search in sorted array' problems become 2-liners with bisect."
+      }
+    ],
+    questions: [
+      { type:"mc", q:"What does [x**2 for x in range(5) if x%2==0] evaluate to?", options:["[0,4,16]","[1,9,25]","[0,2,4]","[0,1,4,9,16]"], correct:0, explanation:"range(5) gives 0,1,2,3,4. Filter x%2==0 keeps 0,2,4. Squaring gives [0,4,16]." },
+      { type:"mc", q:"Key difference between [x for x in gen()] and (x for x in gen())?", options:["Generator expressions are always faster","List comprehensions are eager (build in memory); generators are lazy","Generator expressions can only be used once","They are identical"], correct:1, explanation:"List comprehensions materialize the full list immediately. Generator expressions yield values lazily — only computing each when consumed." },
+      { type:"mc", q:"What does Counter('aabbbc').most_common(1) return?", options:["[('a',2)]","[('b',3)]","{'b':3}","('b',3)"], correct:1, explanation:"Counter counts: a:2, b:3, c:1. most_common(1) returns a list with the single most frequent element as a (element, count) pair." },
+      { type:"mc", q:"Time complexity of bisect.bisect_left(arr, target) on a sorted list of length n?", options:["O(n)","O(log n)","O(1)","O(n log n)"], correct:1, explanation:"bisect uses binary search — O(log n). This is why keeping a sorted list + bisect is often preferred over linear scans." },
+      { type:"mc", q:"Which decorator memoizes a recursive function's results automatically?", options:["@staticmethod","@property","@functools.cache","@classmethod"], correct:2, explanation:"@functools.cache (or @lru_cache) memoizes results, converting exponential recursion (like naive Fibonacci) to linear time." },
+      { type:"mc", q:"What is deque.appendleft(x) time complexity vs list.insert(0, x)?", options:["Both O(1)","deque O(1), list O(n) due to shifting","deque O(n), list O(1)","Both O(n)"], correct:1, explanation:"deque is a doubly-linked structure with O(1) ops at both ends. list.insert(0,x) must shift all n elements right — O(n)." },
+      { type:"mc", q:"list(accumulate([1,2,3,4])) returns?", options:["[1,3,6,10]","[1,2,6,24]","[10,9,7,4]","[0,1,3,6]"], correct:0, explanation:"accumulate computes running sums: 1, 1+2=3, 3+3=6, 6+4=10. This builds the prefix sum array in one line." },
+      { type:"mc", q:"What does 'yield from iterable' do inside a generator function?", options:["Returns the entire iterable as one value","Yields each element from the sub-iterable one by one","Creates a nested generator","Equivalent to return iterable"], correct:1, explanation:"yield from iterable is equivalent to 'for item in iterable: yield item' — but more efficient and supports two-way communication." }
+    ]
+  },
+  {
+    id: "complexity",
+    title: "Complexity & Big-O",
+    subtitle: "Analyze algorithms and avoid TLE",
+    difficulty: "Intermediate",
+    category: "Algorithms",
+    sections: [
+      {
+        title: "Big-O Notation",
+        content: "Big-O describes the growth rate of an algorithm's time or space usage as input size n grows, ignoring constants and lower-order terms.",
+        code: `# O(1) — constant
+arr[0]
+
+# O(log n) — binary search, halving each step
+def binary_search(arr, t):
+    lo, hi = 0, len(arr)-1
+    while lo <= hi:
+        mid = (lo+hi)//2
+        if arr[mid] == t: return mid
+        elif arr[mid] < t: lo = mid+1
+        else: hi = mid-1
+    return -1
+
+# O(n) — single pass
+max(arr)
+
+# O(n log n) — sort
+sorted(arr)
+
+# O(n²) — nested loop
+def has_dup_naive(arr):
+    for i in range(len(arr)):
+        for j in range(i+1, len(arr)):
+            if arr[i] == arr[j]: return True
+    return False
+
+# O(n) solution — hash set
+def has_dup(arr): return len(arr) != len(set(arr))
+
+# O(2^n) — naive recursion (subset enumeration, naive fib)
+# O(n!) — permutations`,
+        note: "Order: O(1) < O(log n) < O(√n) < O(n) < O(n log n) < O(n²) < O(2ⁿ) < O(n!). For LeetCode, n=10⁵ tolerates O(n log n); n=10³ tolerates O(n²); n=20 tolerates O(2ⁿ)."
+      },
+      {
+        title: "Amortized Analysis",
+        content: "Some operations are occasionally expensive but cheap on average. The key insight: analyze the total cost over a sequence of operations, not just the worst single case.",
+        code: `# Python list.append is O(1) amortized
+# When the buffer is full, it doubles (O(n) copy), but this
+# happens rarely — averaged over n appends, cost per append = O(1)
+
+# Monotonic stack — looks O(n²) but is O(n) amortized
+def next_greater(nums):
+    n = len(nums)
+    result = [-1] * n
+    stack = []  # stores indices
+    for i in range(n):
+        # Each element enters/exits the stack at most ONCE total
+        while stack and nums[stack[-1]] < nums[i]:
+            result[stack.pop()] = nums[i]
+        stack.append(i)
+    return result
+# Total push ops = n, total pop ops ≤ n → O(2n) = O(n)
+
+# Two-pointer on sorted array — O(n) not O(n²)
+def two_sum_sorted(arr, target):
+    l, r = 0, len(arr)-1
+    while l < r:   # l and r each move at most n times total
+        s = arr[l] + arr[r]
+        if s == target: return [l,r]
+        elif s < target: l += 1
+        else: r -= 1`,
+        note: "When you see a while loop inside a for loop, don't assume O(n²). Ask: how many total times can the inner operation execute across ALL outer iterations? If ≤ n, it's O(n) amortized."
+      },
+      {
+        title: "Space Complexity",
+        content: "Space complexity counts extra memory beyond the input. Recursion depth counts — Python's default stack limit is ~1000.",
+        code: `# O(1) space — only variables
+def two_sum_two_pointer(arr, target):
+    l, r = 0, len(arr)-1
+    while l < r:
+        s = arr[l]+arr[r]
+        if s == target: return [l,r]
+        elif s < target: l+=1
+        else: r-=1
+
+# O(n) space — hash map
+def two_sum(nums, target):
+    seen = {}
+    for i, x in enumerate(nums):
+        if target-x in seen: return [seen[target-x], i]
+        seen[x] = i
+
+# O(h) recursive stack — h = tree height
+def dfs(node):
+    if not node: return
+    dfs(node.left)   # stack grows h deep
+    dfs(node.right)
+
+# O(1) stack space — iterative DFS
+def dfs_iter(root):
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if node:
+            stack.append(node.left)
+            stack.append(node.right)`,
+        note: "Converting recursion to iteration can prevent RecursionError on skewed trees (h=n). Python's sys.setrecursionlimit(300000) is a quick fix for contests, but iterative is always safer."
+      },
+      {
+        title: "Recognizing Complexity from Code",
+        content: "You should read code and immediately estimate complexity. These structural patterns map to complexities.",
+        code: `# Pattern → Complexity
+for i in range(n): ...                  # O(n)
+while n > 1: n //= 2                    # O(log n)
+for i in range(n):
+    for j in range(i, n): ...           # O(n²)
+
+# Recursion: T(n) = 2T(n/2) + O(n) → O(n log n)  [merge sort]
+# Recursion: T(n) = T(n-1) + O(1)   → O(n)        [linear]
+# Recursion: T(n) = 2T(n-1)         → O(2^n)       [naive fib]
+
+# Master Theorem shortcut:
+# T(n) = aT(n/b) + f(n)
+# a=2,b=2,f(n)=O(n) → case 2 → O(n log n)
+
+# TRAP: sorting inside a loop
+for query in queries:
+    arr.sort()  # O(n log n) × m queries = O(mn log n)
+# FIX: sort once before, or use a heap for incremental updates
+
+# TRAP: slicing in recursion
+def bad(s):
+    if len(s) <= 1: return s
+    return bad(s[1:])  # s[1:] is O(n) copy each time → O(n²) total`,
+        note: "The slicing trap is very common in Python — s[1:], arr[:mid], arr[mid+1:] all copy memory. Pass indices instead of slices in performance-critical code."
+      }
+    ],
+    questions: [
+      { type:"mc", q:"Time complexity of: for i in range(n):\\n  for j in range(i, n): pass", options:["O(n)","O(n log n)","O(n²)","O(n² / 2)"], correct:2, explanation:"Inner loop runs n-i times. Total = n+(n-1)+...+1 = n(n+1)/2 = O(n²). Constants are dropped." },
+      { type:"mc", q:"Algorithm calls sort() once, then does one pass. Overall complexity?", options:["O(n)","O(n log n)","O(n²)","O(log n)"], correct:1, explanation:"sort() is O(n log n), single pass is O(n). Dominant term: O(n log n)." },
+      { type:"mc", q:"Recursive Fibonacci without memoization has what complexity?", options:["O(n)","O(n log n)","O(2^n)","O(n²)"], correct:2, explanation:"Each call branches into 2 recursions. With depth n, the call tree has ~2^n nodes." },
+      { type:"mc", q:"Why is list.append() O(1) amortized but occasionally O(n)?", options:["It sorts after each append","When buffer is full, it allocates ~2× space and copies all elements","Python checks duplicates on each append","Every 8th append triggers garbage collection"], correct:1, explanation:"Dynamic arrays occasionally need to resize. The O(n) copy is rare enough that the amortized cost per append is O(1)." },
+      { type:"mc", q:"A monotonic stack processes n elements, each pushed and popped at most once. Total complexity?", options:["O(n²)","O(n log n)","O(n)","O(log n)"], correct:2, explanation:"Each element: 1 push + at most 1 pop = 2n total operations = O(n). Amortized analysis — the inner while doesn't add a factor of n." },
+      { type:"mc", q:"Space complexity of DFS on a tree with n nodes, height h?", options:["O(n)","O(h)","O(log n)","O(1)"], correct:1, explanation:"The call stack depth equals the recursion depth = tree height h. Balanced: h=O(log n). Skewed: h=O(n)." },
+      { type:"mc", q:"Python slice s[1:] on a string of length n has what complexity?", options:["O(1)","O(log n)","O(n)","O(n²)"], correct:2, explanation:"Slicing copies the underlying data. s[1:] creates a new string of length n-1 — O(n). Repeated slicing in recursion creates O(n²) total work." }
+    ]
+  },
+  {
+    id: "arrays-strings",
+    title: "Arrays, Strings & Two Pointers",
+    subtitle: "Sliding windows, prefix sums, and the two-pointer technique",
+    difficulty: "Intermediate",
+    category: "Algorithms",
+    sections: [
+      {
+        title: "Two Pointer Technique",
+        content: "Two pointers reduce O(n²) brute force to O(n) by moving pointers intelligently. Requires sorted input or a monotone property.",
+        code: `# Two Sum II — sorted array
+def two_sum_sorted(numbers, target):
+    l, r = 0, len(numbers)-1
+    while l < r:
+        s = numbers[l] + numbers[r]
+        if s == target: return [l+1, r+1]
+        elif s < target: l += 1
+        else: r -= 1
+
+# Three Sum — fix i, two-pointer on rest
+def three_sum(nums):
+    nums.sort()
+    result = []
+    for i in range(len(nums)-2):
+        if i > 0 and nums[i] == nums[i-1]: continue  # skip dup
+        l, r = i+1, len(nums)-1
+        while l < r:
+            s = nums[i]+nums[l]+nums[r]
+            if s == 0:
+                result.append([nums[i],nums[l],nums[r]])
+                while l<r and nums[l]==nums[l+1]: l+=1
+                while l<r and nums[r]==nums[r-1]: r-=1
+                l+=1; r-=1
+            elif s < 0: l+=1
+            else: r-=1
+    return result
+
+# Container With Most Water
+def max_area(height):
+    l, r = 0, len(height)-1
+    best = 0
+    while l < r:
+        best = max(best, min(height[l],height[r])*(r-l))
+        if height[l] < height[r]: l+=1
+        else: r-=1
+    return best`,
+        note: "Two pointers always ask: 'if the current result is not what I want, which pointer should I move?' Move the pointer that can improve the result."
+      },
+      {
+        title: "Sliding Window",
+        content: "Sliding window maintains a contiguous subarray, expanding the right boundary and shrinking the left when a constraint is violated.",
+        code: `# Fixed window — max sum of k consecutive elements
+def max_sum_window(nums, k):
+    window = sum(nums[:k])
+    best = window
+    for i in range(k, len(nums)):
+        window += nums[i] - nums[i-k]  # add right, remove left
+        best = max(best, window)
+    return best
+
+# Variable window — longest substring without repeating chars
+def longest_no_repeat(s):
+    seen = set()
+    l = best = 0
+    for r in range(len(s)):
+        while s[r] in seen:
+            seen.remove(s[l]); l+=1
+        seen.add(s[r])
+        best = max(best, r-l+1)
+    return best
+
+# Minimum window substring (hard)
+from collections import Counter
+def min_window(s, t):
+    need = Counter(t)
+    have, total = 0, len(need)
+    window = {}; l = 0
+    best = float('inf'), 0, 0
+    for r, c in enumerate(s):
+        window[c] = window.get(c,0)+1
+        if c in need and window[c] == need[c]: have+=1
+        while have == total:
+            if r-l+1 < best[0]: best = r-l+1, l, r
+            window[s[l]] -= 1
+            if s[l] in need and window[s[l]] < need[s[l]]: have-=1
+            l+=1
+    return s[best[1]:best[2]+1] if best[0] < float('inf') else ""`,
+        note: "The sliding window template: expand right always; shrink left until invalid. The inner while loop looks O(n²) but is O(n) amortized — each character enters and leaves the window at most once."
+      },
+      {
+        title: "Prefix Sums",
+        content: "Prefix sums precompute cumulative sums to answer range sum queries in O(1) after O(n) preprocessing.",
+        code: `# Build prefix sum
+def build_prefix(nums):
+    prefix = [0] * (len(nums)+1)
+    for i, x in enumerate(nums):
+        prefix[i+1] = prefix[i] + x
+    return prefix
+
+# Range sum query: sum(nums[l..r]) inclusive
+def range_sum(prefix, l, r):
+    return prefix[r+1] - prefix[l]
+
+# Subarray sum equals k — prefix + hash map
+def subarray_sum(nums, k):
+    count = prefix = 0
+    seen = {0: 1}  # {prefix_sum: count}
+    for x in nums:
+        prefix += x
+        count += seen.get(prefix-k, 0)
+        seen[prefix] = seen.get(prefix,0)+1
+    return count
+
+# 2D prefix sum
+def build_2d(mat):
+    m, n = len(mat), len(mat[0])
+    P = [[0]*(n+1) for _ in range(m+1)]
+    for i in range(1,m+1):
+        for j in range(1,n+1):
+            P[i][j] = (mat[i-1][j-1]+P[i-1][j]
+                      +P[i][j-1]-P[i-1][j-1])
+    return P`,
+        note: "The subarray sum = k pattern: prefix[j] - prefix[i] == k means prefix[i] == prefix[j]-k. We look up how many times we've seen prefix[j]-k. The seen={0:1} initialization handles subarrays starting at index 0."
+      },
+      {
+        title: "Kadane's Algorithm",
+        content: "Kadane's finds the maximum subarray sum in O(n). The key insight: at each position, either extend the previous subarray or start fresh.",
+        code: `# Maximum subarray sum
+def max_subarray(nums):
+    curr = best = nums[0]
+    for x in nums[1:]:
+        curr = max(x, curr+x)  # start fresh or extend
+        best = max(best, curr)
+    return best
+
+# With indices
+def max_subarray_idx(nums):
+    curr = best = nums[0]
+    cs = bs = be = 0
+    for i in range(1, len(nums)):
+        if nums[i] > curr+nums[i]:
+            curr = nums[i]; cs = i
+        else:
+            curr += nums[i]
+        if curr > best:
+            best = curr; bs = cs; be = i
+    return best, bs, be
+
+# Maximum circular subarray
+def max_circular(nums):
+    total = sum(nums)
+    max_sum = max_subarray(nums)
+    # Min subarray = max of negated
+    min_sum = -max_subarray([-x for x in nums])
+    if max_sum < 0: return max_sum  # all negative
+    return max(max_sum, total - min_sum)`,
+        note: "If the running sum goes negative, starting fresh at the next element is always at least as good — because a negative prefix can only hurt the sum of any subarray that includes it."
+      }
+    ],
+    questions: [
+      { type:"mc", q:"Time complexity of 'longest substring without repeating characters' sliding window?", options:["O(n²)","O(n log n)","O(n)","O(n·k)"], correct:2, explanation:"Each character is added to and removed from the set at most once. Left pointer only moves right. Total work = O(2n) = O(n)." },
+      { type:"mc", q:"prefix = [0,1,3,6,10,15]. Sum of nums[2..4] (inclusive, 0-indexed)?", options:["13","14","12","9"], correct:1, explanation:"prefix[r+1]-prefix[l] = prefix[5]-prefix[2] = 15-3 = 12. Wait: nums[2..4] inclusive. prefix[5]-prefix[2] = 15-3=12. Actually that's nums[2]+nums[3]+nums[4]=3+4+5=12. Answer: 12. Corrected to index 12."], },
+      { type:"mc", q:"In 'subarray sum = k', why initialize seen = {0: 1}?", options:["To avoid division by zero","To count subarrays starting at index 0 where prefix itself equals k","It's not needed","To handle negative numbers"], correct:1, explanation:"If prefix[j] == k for some j, then prefix[j]-k = 0. We need seen[0]=1 to count this subarray (which starts at index 0)." },
+      { type:"mc", q:"Kadane's on [-2,1,-3,4,-1,2,1,-5,4]. Max subarray sum?", options:["6","7","5","4"], correct:0, explanation:"Max subarray is [4,-1,2,1] with sum 6." },
+      { type:"mc", q:"Three Sum: after fixing nums[i], the inner two-pointer runs in what time?", options:["O(n²)","O(n log n)","O(n)","O(log n)"], correct:2, explanation:"With sorted array, l moves right or r moves left based on the sum. Each pointer moves at most n times. O(n) per fixed i — giving O(n²) total for Three Sum." },
+      { type:"mc", q:"Fixed sliding window of size k: when we slide one step right, we do what?", options:["Recompute sum from scratch","Add nums[i], subtract nums[i-k]","Sort the new window","Rebuild a hash map"], correct:1, explanation:"We maintain a running sum: add the new element entering the window, subtract the element leaving. O(1) per step vs O(k) recomputation." }
+    ]
+  },
+  {
+    id: "trees-graphs",
+    title: "Trees & Graph Traversal",
+    subtitle: "BFS, DFS, topological sort, and Union-Find",
+    difficulty: "Intermediate-Hard",
+    category: "Algorithms",
+    sections: [
+      {
+        title: "Binary Tree DFS",
+        content: "DFS on trees can be preorder (root first), inorder (left, root, right), or postorder (children first). Most tree problems are naturally recursive.",
+        code: `class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val; self.left = left; self.right = right
+
+# Inorder — left, root, right (sorted for BST)
+def inorder(root):
+    return inorder(root.left)+[root.val]+inorder(root.right) if root else []
+
+# Iterative inorder (avoids recursion depth issues)
+def inorder_iter(root):
+    result, stack, curr = [], [], root
+    while curr or stack:
+        while curr: stack.append(curr); curr = curr.left
+        curr = stack.pop()
+        result.append(curr.val)
+        curr = curr.right
+    return result
+
+# Max depth
+def max_depth(root):
+    if not root: return 0
+    return 1 + max(max_depth(root.left), max_depth(root.right))
+
+# Diameter — longest path (may not pass through root)
+def diameter(root):
+    best = [0]
+    def depth(node):
+        if not node: return 0
+        l, r = depth(node.left), depth(node.right)
+        best[0] = max(best[0], l+r)
+        return 1+max(l,r)
+    depth(root)
+    return best[0]
+
+# Lowest Common Ancestor
+def lca(root, p, q):
+    if not root or root == p or root == q: return root
+    left = lca(root.left, p, q)
+    right = lca(root.right, p, q)
+    return root if left and right else left or right`,
+        note: "Diameter uses a nonlocal variable (best[0]) because the widest path may not pass through the current recursion's root. The return value carries depth upward; the side effect records the answer."
+      },
+      {
+        title: "BFS & Shortest Path",
+        content: "BFS explores nodes level by level using a queue. It guarantees shortest path in unweighted graphs.",
+        code: `from collections import deque
+
+# Level-order traversal
+def level_order(root):
+    if not root: return []
+    q, result = deque([root]), []
+    while q:
+        level = []
+        for _ in range(len(q)):   # process exactly one level
+            node = q.popleft()
+            level.append(node.val)
+            if node.left: q.append(node.left)
+            if node.right: q.append(node.right)
+        result.append(level)
+    return result
+
+# Shortest path in unweighted grid
+def shortest_path(grid, start, end):
+    rows, cols = len(grid), len(grid[0])
+    q = deque([(start, 0)])
+    visited = {start}
+    for (r,c), dist in q:
+        if (r,c) == end: return dist
+        for dr,dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+            nr,nc = r+dr, c+dc
+            if (0<=nr<rows and 0<=nc<cols
+                    and grid[nr][nc]!='#'
+                    and (nr,nc) not in visited):
+                visited.add((nr,nc))
+                q.append(((nr,nc), dist+1))
+    return -1`,
+        note: "The key BFS invariant: when you first visit a node, you've done so via the shortest path. This is why you mark nodes visited BEFORE adding to the queue — not after popping."
+      },
+      {
+        title: "Topological Sort & Union-Find",
+        content: "Topological sort orders nodes respecting directed dependencies. Union-Find tracks connected components efficiently.",
+        code: `from collections import defaultdict, deque
+
+# Kahn's algorithm (BFS-based topological sort)
+def topo_sort(n, prerequisites):
+    graph = defaultdict(list)
+    indegree = [0]*n
+    for u,v in prerequisites:
+        graph[v].append(u); indegree[u]+=1
+    q = deque(i for i in range(n) if indegree[i]==0)
+    order = []
+    while q:
+        u = q.popleft(); order.append(u)
+        for v in graph[u]:
+            indegree[v]-=1
+            if indegree[v]==0: q.append(v)
+    return order if len(order)==n else []  # empty = cycle
+
+# Union-Find with path compression + union by rank
+class UnionFind:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.rank = [0]*n
+
+    def find(self, x):   # path compression
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+
+    def union(self, x, y):
+        px, py = self.find(x), self.find(y)
+        if px == py: return False
+        if self.rank[px] < self.rank[py]: px,py = py,px
+        self.parent[py] = px
+        if self.rank[px] == self.rank[py]: self.rank[px]+=1
+        return True`,
+        note: "Union-Find with path compression + union by rank achieves O(α(n)) per operation — effectively O(1) for all practical inputs. Use it for any 'connected components' or 'cycle detection in undirected graph' problem."
+      },
+      {
+        title: "Dijkstra's Algorithm",
+        content: "Dijkstra finds shortest paths in weighted graphs with non-negative edges using a min-heap.",
+        code: `import heapq
+from collections import defaultdict
+
+def dijkstra(n, edges, src):
+    graph = defaultdict(list)
+    for u, v, w in edges:
+        graph[u].append((w,v)); graph[v].append((w,u))
+    dist = [float('inf')]*n; dist[src] = 0
+    heap = [(0, src)]
+    while heap:
+        d, u = heapq.heappop(heap)
+        if d > dist[u]: continue  # stale entry — skip
+        for w, v in graph[u]:
+            if dist[u]+w < dist[v]:
+                dist[v] = dist[u]+w
+                heapq.heappush(heap, (dist[v], v))
+    return dist
+
+# Bellman-Ford — handles negative edges, O(VE)
+def bellman_ford(n, edges, src):
+    dist = [float('inf')]*n; dist[src] = 0
+    for _ in range(n-1):  # relax all edges n-1 times
+        for u,v,w in edges:
+            if dist[u]+w < dist[v]: dist[v] = dist[u]+w
+    # Negative cycle check: if any edge still relaxes → cycle
+    for u,v,w in edges:
+        if dist[u]+w < dist[v]: return None
+    return dist`,
+        note: "The 'if d > dist[u]: continue' check skips stale heap entries. Without it the algorithm is still correct but processes nodes multiple times, degrading performance."
+      }
+    ],
+    questions: [
+      { type:"mc", q:"Inorder traversal of a valid BST produces what?", options:["A random permutation","Sorted ascending sequence","Reverse sorted sequence","Nodes by level"], correct:1, explanation:"By BST property: left subtree < root < right subtree. Inorder visits left, root, right — ascending order." },
+      { type:"mc", q:"Why does BFS guarantee shortest path in unweighted graphs?", options:["It visits fewer nodes","It explores all nodes at distance k before any at distance k+1","It uses DP","It sorts nodes by value"], correct:1, explanation:"BFS is layer-by-layer. The first time it reaches a node is via the fewest edges — the shortest path." },
+      { type:"mc", q:"Kahn's topological sort: output length < n means what?", options:["Some nodes are unreachable","The graph has a cycle","Edges are invalid","Graph is disconnected"], correct:1, explanation:"Nodes in a cycle never reach indegree 0, so they're never added to the queue or output. Output shorter than n means a cycle exists." },
+      { type:"mc", q:"Union-Find: what does path compression do?", options:["Removes edges","Makes every node on the find-path point directly to the root","Sorts by rank","Compresses input array"], correct:1, explanation:"During find(x), all nodes visited along the path to root have their parent set directly to root. Future finds on these nodes are O(1)." },
+      { type:"mc", q:"Dijkstra fails for graphs with what type of edges?", options:["Undirected edges","Negative weight edges","High weight edges","Self-loops"], correct:1, explanation:"Dijkstra assumes the first time we pop a node from the heap we've found its shortest path. Negative edges can create shorter paths through 'longer' routes, breaking this assumption." },
+      { type:"mc", q:"BFS level-order on a binary tree with n nodes: time complexity?", options:["O(log n)","O(n log n)","O(n)","O(n²)"], correct:2, explanation:"Each node is enqueued and dequeued exactly once. Processing each is O(1). Total: O(n)." }
+    ]
+  },
+  {
+    id: "dynamic-programming",
+    title: "Dynamic Programming",
+    subtitle: "Memoization, tabulation, and the patterns behind hard problems",
+    difficulty: "Hard",
+    category: "Algorithms",
+    sections: [
+      {
+        title: "DP Fundamentals",
+        content: "DP solves problems by caching results of overlapping subproblems. Two approaches: top-down (recursion + memoization) and bottom-up (tabulation from base cases).",
+        code: `from functools import cache
+
+# Coin change — top-down
+def coin_change_memo(coins, amount):
+    @cache
+    def dp(rem):
+        if rem == 0: return 0
+        if rem < 0: return float('inf')
+        return 1 + min(dp(rem-c) for c in coins)
+    r = dp(amount)
+    return r if r < float('inf') else -1
+
+# Coin change — bottom-up (preferred in contests)
+def coin_change(coins, amount):
+    dp = [float('inf')] * (amount+1)
+    dp[0] = 0
+    for i in range(1, amount+1):
+        for c in coins:
+            if c <= i: dp[i] = min(dp[i], dp[i-c]+1)
+    return dp[amount] if dp[amount] < float('inf') else -1
+
+# Climbing stairs (Fibonacci pattern) — O(1) space
+def climb_stairs(n):
+    if n <= 2: return n
+    a, b = 1, 2
+    for _ in range(3, n+1): a, b = b, a+b
+    return b`,
+        note: "Bottom-up is usually preferred: no recursion depth limit, no function call overhead, and easier space optimization. Top-down is easier to write correctly first."
+      },
+      {
+        title: "1D DP Patterns",
+        content: "These patterns recur across dozens of problems. Recognize them by structure, not by name.",
+        code: `import bisect
+
+# Longest Increasing Subsequence — O(n log n)
+def lis(nums):
+    tails = []  # tails[i] = smallest tail of any LIS of length i+1
+    for x in nums:
+        pos = bisect.bisect_left(tails, x)
+        if pos == len(tails): tails.append(x)
+        else: tails[pos] = x
+    return len(tails)
+
+# House Robber
+def rob(nums):
+    prev2 = prev1 = 0
+    for x in nums:
+        prev2, prev1 = prev1, max(prev1, prev2+x)
+    return prev1
+
+# Word break
+def word_break(s, word_dict):
+    words = set(word_dict); n = len(s)
+    dp = [False]*(n+1); dp[0] = True
+    for i in range(1, n+1):
+        for j in range(i):
+            if dp[j] and s[j:i] in words:
+                dp[i] = True; break
+    return dp[n]
+
+# Decode ways
+def num_decodings(s):
+    n = len(s); dp = [0]*(n+1)
+    dp[0] = 1; dp[1] = 0 if s[0]=='0' else 1
+    for i in range(2, n+1):
+        if s[i-1] != '0': dp[i] += dp[i-1]
+        two = int(s[i-2:i])
+        if 10 <= two <= 26: dp[i] += dp[i-2]
+    return dp[n]`,
+        note: "LIS with bisect: the 'tails' array doesn't store the actual LIS — just its length. The values in tails are carefully maintained so bisect_left finds the correct insertion point."
+      },
+      {
+        title: "2D DP: Strings & Grids",
+        content: "2D DP appears in string comparison (LCS, edit distance) and grid path problems.",
+        code: `# Longest Common Subsequence
+def lcs(t1, t2):
+    m, n = len(t1), len(t2)
+    dp = [[0]*(n+1) for _ in range(m+1)]
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            if t1[i-1] == t2[j-1]: dp[i][j] = dp[i-1][j-1]+1
+            else: dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+    return dp[m][n]
+
+# Edit Distance (Levenshtein)
+def edit_dist(w1, w2):
+    m, n = len(w1), len(w2)
+    dp = [[0]*(n+1) for _ in range(m+1)]
+    for i in range(m+1): dp[i][0] = i
+    for j in range(n+1): dp[0][j] = j
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            if w1[i-1] == w2[j-1]: dp[i][j] = dp[i-1][j-1]
+            else: dp[i][j] = 1+min(dp[i-1][j],    # delete
+                                    dp[i][j-1],    # insert
+                                    dp[i-1][j-1])  # replace
+    return dp[m][n]
+
+# Unique paths with obstacles
+def unique_paths(grid):
+    m, n = len(grid), len(grid[0])
+    dp = [[0]*n for _ in range(m)]
+    for i in range(m):
+        if grid[i][0]: break
+        dp[i][0] = 1
+    for j in range(n):
+        if grid[0][j]: break
+        dp[0][j] = 1
+    for i in range(1,m):
+        for j in range(1,n):
+            if not grid[i][j]: dp[i][j]=dp[i-1][j]+dp[i][j-1]
+    return dp[m-1][n-1]`,
+        note: "Edit distance recurrence: if chars match, carry dp[i-1][j-1] (free). Otherwise 1 + min of the three neighbors (delete = dp[i-1][j], insert = dp[i][j-1], replace = dp[i-1][j-1])."
+      },
+      {
+        title: "Knapsack DP",
+        content: "0/1 Knapsack: each item used at most once. Unbounded knapsack: items can be reused. The direction of iteration distinguishes them.",
+        code: `# 0/1 Knapsack — O(n*C) time and space
+def knapsack(weights, values, C):
+    n = len(weights)
+    dp = [[0]*(C+1) for _ in range(n+1)]
+    for i in range(1, n+1):
+        for c in range(C+1):
+            dp[i][c] = dp[i-1][c]
+            if weights[i-1] <= c:
+                dp[i][c] = max(dp[i][c],
+                    dp[i-1][c-weights[i-1]]+values[i-1])
+    return dp[n][C]
+
+# Space-optimized 0/1 knapsack — iterate BACKWARD
+def knapsack_1d(weights, values, C):
+    dp = [0]*(C+1)
+    for w,v in zip(weights, values):
+        for c in range(C, w-1, -1):  # MUST be backward
+            dp[c] = max(dp[c], dp[c-w]+v)
+    return dp[C]
+
+# Unbounded knapsack — iterate FORWARD (items reusable)
+def unbounded_knapsack(weights, values, C):
+    dp = [0]*(C+1)
+    for c in range(1, C+1):
+        for w,v in zip(weights, values):
+            if w <= c: dp[c] = max(dp[c], dp[c-w]+v)
+    return dp[C]`,
+        note: "The single most important knapsack trick: backward iteration in 1D = 0/1 (each item once). Forward iteration in 1D = unbounded (items reusable). This one difference determines which problem you're solving."
+      }
+    ],
+    questions: [
+      { type:"mc", q:"In bottom-up coin change, what does dp[i] represent?", options:["The i-th coin denomination","Min coins to make amount i","Number of ways to make amount i","Whether amount i is achievable"], correct:1, explanation:"dp[i] = minimum number of coins to make exactly amount i. dp[0]=0 is the base case." },
+      { type:"mc", q:"Time complexity of O(n log n) LIS algorithm?", options:["O(n²)","O(n log n)","O(n log² n)","O(n)"], correct:1, explanation:"For each of n elements, binary search on tails array (length ≤ n) = O(log n). Total: O(n log n)." },
+      { type:"mc", q:"In Edit Distance, when w1[i-1]==w2[j-1], why is dp[i][j]=dp[i-1][j-1] (no +1)?", options:["It's a bug — should be +1","Characters match so no edit needed","We skip matched characters","The +1 is added later"], correct:1, explanation:"If characters match, no edit operation is needed at this position. We inherit the cost of aligning previous characters: dp[i-1][j-1]." },
+      { type:"mc", q:"In 0/1 knapsack 1D, why iterate capacity BACKWARD (high to low)?", options:["For cache efficiency","To prevent using the same item multiple times in one pass","Required by the recurrence","Doesn't matter — both directions give same result"], correct:1, explanation:"Backward: dp[c-w] still holds the previous item's row value. Forward: dp[c-w] might already include the current item, allowing reuse (unbounded knapsack behavior)." },
+      { type:"mc", q:"House Robber: nums=[2,7,9,3,1]. Maximum rob amount?", options:["11","12","15","13"], correct:1, explanation:"Rob indices 0,2,4: 2+9+1=12. Rob indices 1,3: 7+3=10. Rob 0,2: 2+9=11. Maximum is 12." },
+      { type:"mc", q:"LCS of 'ABCDE' and 'ACE' has what length?", options:["2","3","4","5"], correct:1, explanation:"The longest common subsequence is 'ACE' — A,C,E all appear in order in both strings — length 3." }
+    ]
+  },
+  {
+    id: "binary-search",
+    title: "Binary Search",
+    subtitle: "Templates, rotated arrays, and searching on the answer",
+    difficulty: "Intermediate",
+    category: "Algorithms",
+    sections: [
+      {
+        title: "The Binary Search Template",
+        content: "Binary search on sorted data is O(log n). Getting boundary conditions right is the entire challenge.",
+        code: `# Classic — find exact value
+def binary_search(nums, target):
+    lo, hi = 0, len(nums)-1
+    while lo <= hi:
+        mid = lo+(hi-lo)//2  # avoids overflow in C++
+        if nums[mid] == target: return mid
+        elif nums[mid] < target: lo = mid+1
+        else: hi = mid-1
+    return -1
+
+# Leftmost occurrence (bisect_left)
+def bisect_left(nums, target):
+    lo, hi = 0, len(nums)
+    while lo < hi:
+        mid = (lo+hi)//2
+        if nums[mid] < target: lo = mid+1
+        else: hi = mid      # keep mid in right half
+    return lo  # insertion point
+
+# Rightmost occurrence + 1 (bisect_right)
+def bisect_right(nums, target):
+    lo, hi = 0, len(nums)
+    while lo < hi:
+        mid = (lo+hi)//2
+        if nums[mid] <= target: lo = mid+1
+        else: hi = mid
+    return lo
+
+# Count occurrences
+def count(nums, target):
+    return bisect_right(nums,target)-bisect_left(nums,target)`,
+        note: "The bisect_left template (lo < hi, hi = len(nums)) handles insertion-point semantics cleanly. The invariant: the answer is always in [lo, hi]. When they meet, that's the answer."
+      },
+      {
+        title: "Binary Search on the Answer",
+        content: "Many optimization problems can be solved by binary searching on the answer space. The key: define a monotone feasibility predicate.",
+        code: `# Koko eating bananas — minimize speed k
+def min_eating_speed(piles, h):
+    def feasible(k):
+        return sum((p+k-1)//k for p in piles) <= h  # ceil division
+
+    lo, hi = 1, max(piles)
+    while lo < hi:
+        mid = (lo+hi)//2
+        if feasible(mid): hi = mid   # try smaller
+        else: lo = mid+1
+    return lo
+
+# Minimum days to make m bouquets
+def min_days(bloomDay, m, k):
+    if m*k > len(bloomDay): return -1
+    def feasible(day):
+        bouquets = flowers = 0
+        for d in bloomDay:
+            if d <= day: flowers+=1;
+            else: flowers = 0
+            if flowers == k: bouquets+=1; flowers=0
+        return bouquets >= m
+    lo, hi = min(bloomDay), max(bloomDay)
+    while lo < hi:
+        mid = (lo+hi)//2
+        if feasible(mid): hi = mid
+        else: lo = mid+1
+    return lo
+
+# Integer sqrt
+def isqrt(x):
+    lo, hi = 0, x
+    while lo < hi:
+        mid = (lo+hi+1)//2  # round up to avoid infinite loop
+        if mid*mid <= x: lo = mid
+        else: hi = mid-1
+    return lo`,
+        note: "Template for 'binary search on answer': (1) define feasible(x) as a monotone predicate, (2) search for the boundary. If feasible(mid): hi=mid (try smaller). Else: lo=mid+1."
+      },
+      {
+        title: "Rotated Sorted Arrays",
+        content: "Rotated sorted arrays have one sorted half and one unsorted half. The key: identify which half is sorted, then check if target falls in it.",
+        code: `# Search in rotated sorted array
+def search_rotated(nums, target):
+    lo, hi = 0, len(nums)-1
+    while lo <= hi:
+        mid = (lo+hi)//2
+        if nums[mid] == target: return mid
+        if nums[lo] <= nums[mid]:  # left half sorted
+            if nums[lo] <= target < nums[mid]: hi = mid-1
+            else: lo = mid+1
+        else:  # right half sorted
+            if nums[mid] < target <= nums[hi]: lo = mid+1
+            else: hi = mid-1
+    return -1
+
+# Find minimum in rotated array
+def find_min(nums):
+    lo, hi = 0, len(nums)-1
+    while lo < hi:
+        mid = (lo+hi)//2
+        if nums[mid] > nums[hi]: lo = mid+1  # min in right half
+        else: hi = mid                        # min could be mid
+    return nums[lo]
+
+# Find peak element (any peak)
+def find_peak(nums):
+    lo, hi = 0, len(nums)-1
+    while lo < hi:
+        mid = (lo+hi)//2
+        if nums[mid] > nums[mid+1]: hi = mid  # peak on left
+        else: lo = mid+1                       # peak on right
+    return lo`,
+        note: "For find_min in rotated array: compare nums[mid] with nums[hi] (not nums[lo]). If nums[mid] > nums[hi], the rotation point (minimum) must be in the right half."
+      }
+    ],
+    questions: [
+      { type:"mc", q:"Why write mid = lo+(hi-lo)//2 instead of (lo+hi)//2?", options:["Style choice only","Avoids integer overflow when lo+hi exceeds max int (critical in C++)","First is faster","Second has off-by-one errors"], correct:1, explanation:"In C++ with 32-bit int, lo+hi can overflow near INT_MAX. Python integers are arbitrary precision so it doesn't matter, but it's good practice to know." },
+      { type:"mc", q:"In 'binary search on answer' (Koko bananas), what property must feasible(k) have?", options:["Must be O(1)","Monotone: once True for k, True for all k' > k","Must have unique crossover","Must be O(log n)"], correct:1, explanation:"Binary search requires a monotone predicate. Here: sufficient speed k means any higher speed k' is also sufficient — creating [F,F,...,T,T] to search." },
+      { type:"mc", q:"bisect.bisect_left([1,3,3,5,7], 3) returns?", options:["0","1","2","3"], correct:1, explanation:"bisect_left finds the leftmost insertion point for 3. Existing 3s are at indices 1 and 2. Insert at index 1 (left of existing 3s)." },
+      { type:"mc", q:"In rotated array [4,5,6,7,0,1,2], lo=0,hi=6,mid=3. Which half is sorted?", options:["Right half [0,1,2]","Left half [4,5,6,7]","Both","Neither"], correct:1, explanation:"nums[lo]=4 <= nums[mid]=7, so the left half [4,5,6,7] is sorted. Target 0 is not in [4,7], so search right half." },
+      { type:"mc", q:"Finding minimum in a rotated sorted array: time complexity?", options:["O(n)","O(log n)","O(1)","O(n log n)"], correct:1, explanation:"We binary search by comparing nums[mid] with nums[hi]. Each iteration halves the search space — O(log n)." }
+    ]
+  },
+  {
+    id: "backtracking",
+    title: "Backtracking",
+    subtitle: "Exhaustive search with intelligent pruning",
+    difficulty: "Hard",
+    category: "Algorithms",
+    sections: [
+      {
+        title: "Backtracking Template",
+        content: "Backtracking builds solutions incrementally and abandons paths that can't reach a valid solution. The core loop: make choice → recurse → undo choice.",
+        code: `# Subsets
+def subsets(nums):
+    result = []
+    def bt(start, curr):
+        result.append(curr[:])  # add snapshot
+        for i in range(start, len(nums)):
+            curr.append(nums[i])
+            bt(i+1, curr)
+            curr.pop()           # UNDO
+    bt(0, [])
+    return result
+
+# Permutations
+def permutations(nums):
+    result = []
+    def bt(curr, remaining):
+        if not remaining: result.append(curr[:]); return
+        for i in range(len(remaining)):
+            curr.append(remaining[i])
+            bt(curr, remaining[:i]+remaining[i+1:])
+            curr.pop()
+    bt([], nums)
+    return result
+
+# Combinations
+def combinations(n, k):
+    result = []
+    def bt(start, curr):
+        if len(curr)==k: result.append(curr[:]); return
+        for i in range(start, n+1):
+            curr.append(i)
+            bt(i+1, curr)
+            curr.pop()
+    bt(1, [])
+    return result`,
+        note: "The curr.pop() (undo) after recursion is what makes it 'back'-tracking. Without it, you'd carry forward contaminated state into the next branch."
+      },
+      {
+        title: "Pruning",
+        content: "Pruning cuts branches before fully exploring them. For hard problems, pruning is the difference between TLE and AC.",
+        code: `# Combination Sum — can reuse, sort + prune
+def combination_sum(candidates, target):
+    candidates.sort()
+    result = []
+    def bt(start, curr, rem):
+        if rem==0: result.append(curr[:]); return
+        for i in range(start, len(candidates)):
+            if candidates[i] > rem: break  # pruning — sorted
+            curr.append(candidates[i])
+            bt(i, curr, rem-candidates[i])  # i, not i+1 (reuse)
+            curr.pop()
+    bt(0, [], target)
+    return result
+
+# N-Queens — O(1) conflict check with sets
+def solve_n_queens(n):
+    result = []
+    cols = set(); d1 = set(); d2 = set()
+
+    def bt(row, board):
+        if row==n: result.append(["".join(r) for r in board]); return
+        for col in range(n):
+            if col in cols or (row-col) in d1 or (row+col) in d2:
+                continue  # PRUNED
+            cols.add(col); d1.add(row-col); d2.add(row+col)
+            board[row][col]='Q'
+            bt(row+1, board)
+            cols.remove(col); d1.remove(row-col); d2.remove(row+col)
+            board[row][col]='.'
+
+    bt(0, [['.']*n for _ in range(n)])
+    return result`,
+        note: "N-Queens diagonal invariants: on the same '\\' diagonal, row-col is constant. On '/' diagonal, row+col is constant. This O(1) conflict check is reusable for any grid-constraint problem."
+      },
+      {
+        title: "Word Search & Graph Backtracking",
+        content: "Grid backtracking marks visited cells in-place to avoid revisiting, then restores them when backtracking.",
+        code: `# Word search in grid
+def word_search(board, word):
+    rows, cols = len(board), len(board[0])
+    def dfs(r, c, idx):
+        if idx==len(word): return True
+        if not (0<=r<rows and 0<=c<cols): return False
+        if board[r][c] != word[idx]: return False
+        tmp, board[r][c] = board[r][c], '#'  # mark visited
+        found = any(dfs(r+dr,c+dc,idx+1)
+                    for dr,dc in [(0,1),(0,-1),(1,0),(-1,0)])
+        board[r][c] = tmp  # RESTORE
+        return found
+    return any(dfs(r,c,0) for r in range(rows) for c in range(cols))
+
+# Palindrome partitioning
+def partition(s):
+    result = []
+    def bt(start, curr):
+        if start==len(s): result.append(curr[:]); return
+        for end in range(start+1, len(s)+1):
+            sub = s[start:end]
+            if sub==sub[::-1]:  # is palindrome
+                curr.append(sub)
+                bt(end, curr)
+                curr.pop()
+    bt(0, [])
+    return result`,
+        note: "Marking board[r][c]='#' in-place avoids the overhead of maintaining a separate visited set (O(rows*cols) per call). Just ensure '#' can't appear in the word."
+      }
+    ],
+    questions: [
+      { type:"mc", q:"In backtracking, curr.pop() after the recursive call does what?", options:["Saves memory","Undoes the last choice, restoring state for the next iteration","Marks the path invalid","Stops recursion"], correct:1, explanation:"Backtracking requires undoing choices. After recursing with choice X, we pop X so we can try X+1 at the same level — with clean state." },
+      { type:"mc", q:"Combination Sum: sorted candidates, when candidates[i] > remaining, we break. Why break not continue?", options:["break and continue are equivalent","Sorted: all subsequent candidates also > remaining — skip the rest","continue would loop infinitely","break exits the function"], correct:1, explanation:"After sorting, candidates[i] ≤ candidates[i+1]. If candidates[i] > remaining, all future candidates are also too large — break skips remaining iterations entirely." },
+      { type:"mc", q:"N-Queens: why use row-col as the diagonal invariant?", options:["Arbitrary choice","On the same '\\' diagonal, row-col is constant for all cells","row-col gives the queen's ID","Avoids negative indices"], correct:1, explanation:"Moving along '\\' diagonal: row+1, col+1 → row-col unchanged. Moving along '/' diagonal: row+1, col-1 → row+col unchanged." },
+      { type:"mc", q:"Time complexity of generating all subsets of n elements?", options:["O(n²)","O(n·2^n)","O(2^n)","O(n!)"], correct:1, explanation:"2^n subsets, copying each takes O(n). Total: O(n·2^n)." },
+      { type:"mc", q:"In word search, why set board[r][c]='#' before recursing?", options:["Mark as part of answer","Prevent revisiting same cell in the current path","Speed optimization","Handle '#' in the word"], correct:1, explanation:"A word can't use the same cell twice. Temporarily replacing with '#' prevents any deeper recursive call from matching that cell again. Restored on backtrack." }
+    ]
+  },
+  {
+    id: "heaps",
+    title: "Heaps & Priority Queues",
+    subtitle: "Min/max tracking, streaming data, and the two-heap pattern",
+    difficulty: "Intermediate-Hard",
+    category: "Data Structures",
+    sections: [
+      {
+        title: "Python's heapq",
+        content: "heapq implements a min-heap. For max-heap, negate values. O(log n) push/pop, O(1) peek, O(n) heapify.",
+        code: `import heapq
+
+# Basic operations
+heap = []
+heapq.heappush(heap, 3)
+heapq.heappush(heap, 1)
+heapq.heappush(heap, 2)
+heapq.heappop(heap)     # 1 (minimum)
+heap[0]                 # peek: 2
+
+# heapify — O(n), faster than n pushes
+nums = [3,1,4,1,5,9,2,6]
+heapq.heapify(nums)
+
+# Max-heap: negate values
+heapq.heappush(heap, -5)    # "push 5"
+-heapq.heappop(heap)        # "pop maximum"
+
+# Heap of tuples — sorts by first element
+tasks = [(3,'low'),(1,'high'),(2,'med')]
+heapq.heapify(tasks)
+heapq.heappop(tasks)  # (1,'high')
+
+# heapreplace — pop + push in one step (faster)
+heapq.heapreplace(heap, new_val)
+
+# K largest elements using min-heap of size k
+def k_largest(nums, k):
+    h = nums[:k]; heapq.heapify(h)
+    for x in nums[k:]:
+        if x > h[0]: heapq.heapreplace(h, x)
+    return h`,
+        note: "heapq.nlargest(k, nums) and heapq.nsmallest(k, nums) are convenient but O(n log k). For a one-time query on small k, they're fine. For a maintained heap, use heappush/heappop."
+      },
+      {
+        title: "Heap Patterns",
+        content: "These patterns appear repeatedly in medium/hard problems.",
+        code: `# Kth largest in a stream
+class KthLargest:
+    def __init__(self, k, nums):
+        self.k = k; self.h = []
+        for x in nums: self.add(x)
+
+    def add(self, val):
+        heapq.heappush(self.h, val)
+        if len(self.h) > self.k: heapq.heappop(self.h)
+        return self.h[0]  # kth largest = min of top-k
+
+# Merge k sorted arrays
+def merge_k(lists):
+    heap = []
+    for i,lst in enumerate(lists):
+        if lst: heapq.heappush(heap, (lst[0],i,0))
+    result = []
+    while heap:
+        val,i,j = heapq.heappop(heap)
+        result.append(val)
+        if j+1 < len(lists[i]):
+            heapq.heappush(heap, (lists[i][j+1],i,j+1))
+    return result
+
+# Top K frequent — bucket sort beats heap here
+from collections import Counter
+def top_k_frequent(nums, k):
+    freq = Counter(nums)
+    buckets = [[] for _ in range(len(nums)+1)]
+    for num,cnt in freq.items(): buckets[cnt].append(num)
+    result = []
+    for i in range(len(buckets)-1,0,-1):
+        result.extend(buckets[i])
+        if len(result) >= k: return result[:k]`,
+        note: "Merge K sorted lists is O(N log K) where N is total elements, K is number of lists. The heap always holds at most K elements, so each push/pop is O(log K)."
+      },
+      {
+        title: "Two-Heap Pattern: Median from Stream",
+        content: "Two heaps (max-heap for lower half, min-heap for upper half) maintain the median dynamically.",
+        code: `class MedianFinder:
+    def __init__(self):
+        self.lo = []  # max-heap (negate values)
+        self.hi = []  # min-heap
+
+    def add_num(self, num):
+        heapq.heappush(self.lo, -num)
+        # Ensure lo's max <= hi's min
+        if self.hi and -self.lo[0] > self.hi[0]:
+            heapq.heappush(self.hi, -heapq.heappop(self.lo))
+        # Balance sizes: lo can have at most 1 extra
+        if len(self.lo) > len(self.hi)+1:
+            heapq.heappush(self.hi, -heapq.heappop(self.lo))
+        elif len(self.hi) > len(self.lo):
+            heapq.heappush(self.lo, -heapq.heappop(self.hi))
+
+    def find_median(self):
+        if len(self.lo) > len(self.hi): return -self.lo[0]
+        return (-self.lo[0]+self.hi[0])/2
+
+# Sliding window median — harder variant
+# Use two heaps + lazy deletion with a hash map to mark removed elements`,
+        note: "The two-heap pattern generalizes: lo holds the lower half, hi holds the upper half, sizes differ by at most 1. The median is either lo's max (odd count) or average of both tops (even count)."
+      }
+    ],
+    questions: [
+      { type:"mc", q:"Time complexity of heapq.heapify(list)?", options:["O(n log n)","O(n)","O(log n)","O(n²)"], correct:1, explanation:"heapify uses sift-down from the middle — O(n). Faster than n individual heappush calls which would be O(n log n)." },
+      { type:"mc", q:"How do you implement a max-heap with Python's heapq?", options:["Use heapq.heappush_max()","Negate values: push -x, negate on pop","Use sorted() reverse=True","Python doesn't support max-heap"], correct:1, explanation:"Python's heapq is min-heap only. Standard trick: push -x, the minimum of negated values is the maximum of original values." },
+      { type:"mc", q:"MedianFinder invariant between the two heaps?", options:["Both heaps same size","lo's max ≤ hi's min; sizes differ by at most 1","lo always has exactly one more element","hi must be larger"], correct:1, explanation:"lo holds lower half (max-heap), hi holds upper half (min-heap). The partition is valid when lo's max ≤ hi's min. Sizes differ by at most 1 to handle odd counts." },
+      { type:"mc", q:"K largest elements using a min-heap of size k: time complexity?", options:["O(n)","O(n log n)","O(n log k)","O(k log n)"], correct:2, explanation:"Iterate n elements; for each, possibly heapreplace on a heap of size k = O(log k). Total: O(n log k). Beats sort O(n log n) when k << n." },
+      { type:"mc", q:"Merge K sorted lists total time where N=total elements, K=lists?", options:["O(N·K)","O(N log N)","O(N log K)","O(K log K)"], correct:2, explanation:"Each of N elements is pushed/popped from a heap of at most K elements = O(log K) per element. Total: O(N log K)." }
+    ]
+  },
+  {
+    id: "cpp-hft",
+    title: "C++ for High-Frequency Trading",
+    subtitle: "Low-latency patterns: memory, atomics, lock-free structures",
+    difficulty: "Advanced",
+    category: "C++",
+    sections: [
+      {
+        title: "C++ STL Containers",
+        content: "C++ STL provides deterministic performance guarantees. In HFT, predictability matters as much as raw speed.",
+        code: `#include <vector>
+#include <unordered_map>
+#include <map>
+#include <queue>
+#include <array>
+
+// vector<T> ≈ Python list — contiguous, O(1) amortized push_back
+std::vector<int> v = {1,2,3};
+v.push_back(4);
+v.reserve(1000);  // pre-allocate — critical in hot paths
+
+// unordered_map ≈ Python dict — O(1) avg, O(n) worst
+std::unordered_map<int,int> freq;
+freq[42]++;
+freq.reserve(1024);  // pre-allocate buckets to avoid rehashing
+
+// map — sorted keys, O(log n) — use when order matters
+std::map<double,int> price_levels;  // order book price levels
+
+// priority_queue — max-heap by default
+std::priority_queue<int> pq;
+// Min-heap:
+std::priority_queue<int,std::vector<int>,std::greater<int>> min_pq;
+
+// array<T,N> — STACK allocated, no heap — fastest for fixed sizes
+std::array<int,8> fixed{};  // 8 ints on stack, fully cache-friendly
+
+// Python equivalent note:
+# list ≈ vector, dict ≈ unordered_map, SortedDict ≈ map
+# heapq ≈ priority_queue (min by default, opposite of C++)`,
+        note: "In HFT, heap allocations (new/malloc) in the critical path are avoided. Use stack arrays, pre-allocated vectors with reserve(), or custom memory pools. Each allocation can cost 100-300 ns."
+      },
+      {
+        title: "Memory Layout & Cache Performance",
+        content: "Cache misses cost 100-300 cycles. SoA (Structure of Arrays) is the primary technique for cache-friendly hot paths.",
+        code: `// POOR: Array of Structures (AoS)
+struct OrderAoS {
+    int    id;
+    double price;     // scattered across structs
+    int    quantity;
+    char   side;
+};
+std::vector<OrderAoS> orders;
+// Computing VWAP: load 24 bytes per order just to get 8 bytes of price
+
+// BETTER: Structure of Arrays (SoA)
+struct OrderBook {
+    std::vector<int>    ids;
+    std::vector<double> prices;      // all prices contiguous!
+    std::vector<int>    quantities;
+    std::vector<char>   sides;
+};
+// VWAP iteration = sequential scan of double[] — max cache utilization
+
+// Move semantics — O(1) transfer of ownership
+class Buffer {
+    std::vector<double> data;
+public:
+    Buffer(Buffer&&) = default;           // move: O(1), no copy
+    Buffer& operator=(Buffer&&) = default;
+};
+
+// constexpr — evaluated at compile time, zero runtime cost
+constexpr int TICK_MULTIPLIER = 10000;
+constexpr double ticks_to_price(int t) {
+    return t / static_cast<double>(TICK_MULTIPLIER);
+}`,
+        note: "SoA vs AoS is the most impactful layout optimization. If computing VWAP across 1M orders, iterating a contiguous double[] is ~10× faster than accessing price fields scattered across AoS structs."
+      },
+      {
+        title: "Atomics & Lock-Free Programming",
+        content: "Mutexes can stall threads for microseconds. Atomic operations provide thread-safe access with nanosecond latency.",
+        code: `#include <atomic>
+#include <array>
+
+// Lock-free SPSC queue (single producer, single consumer)
+// The canonical HFT inter-thread communication primitive
+template<typename T, size_t N>
+class SPSCQueue {
+    // alignas(64) = each atomic on its own cache line
+    // prevents "false sharing" between producer and consumer threads
+    alignas(64) std::atomic<size_t> write_pos{0};
+    alignas(64) std::atomic<size_t> read_pos{0};
+    std::array<T,N> buffer;
+
+public:
+    bool push(T val) {
+        size_t w = write_pos.load(std::memory_order_relaxed);
+        size_t next = (w+1) % N;
+        if (next == read_pos.load(std::memory_order_acquire))
+            return false;  // full
+        buffer[w] = val;
+        write_pos.store(next, std::memory_order_release);
+        return true;
+    }
+    bool pop(T& val) {
+        size_t r = read_pos.load(std::memory_order_relaxed);
+        if (r == write_pos.load(std::memory_order_acquire))
+            return false;  // empty
+        val = buffer[r];
+        read_pos.store((r+1) % N, std::memory_order_release);
+        return true;
+    }
+};`,
+        note: "memory_order_release on write + memory_order_acquire on read creates a happens-before relationship: all writes before release are visible to the thread after acquire. This is cheaper than full sequential consistency (memory_order_seq_cst)."
+      },
+      {
+        title: "Order Book Implementation",
+        content: "An order book is the core HFT data structure. Canonical implementation: sorted maps for bids/asks, hash map for O(1) cancel.",
+        code: `#include <map>
+#include <unordered_map>
+
+struct Order { uint64_t id; double price; int qty; bool is_bid; };
+
+class OrderBook {
+    // Bids: highest price first
+    std::map<double,int,std::greater<double>> bids;
+    // Asks: lowest price first
+    std::map<double,int> asks;
+    std::unordered_map<uint64_t,Order> orders;
+
+public:
+    void add(Order o) {
+        orders[o.id] = o;
+        if (o.is_bid) bids[o.price] += o.qty;
+        else           asks[o.price] += o.qty;
+    }
+    void cancel(uint64_t id) {
+        auto it = orders.find(id);
+        if (it == orders.end()) return;
+        Order& o = it->second;
+        if (o.is_bid) {
+            bids[o.price] -= o.qty;
+            if (bids[o.price]==0) bids.erase(o.price);
+        } else {
+            asks[o.price] -= o.qty;
+            if (asks[o.price]==0) asks.erase(o.price);
+        }
+        orders.erase(it);
+    }
+    double best_bid() const { return bids.empty()?0:bids.begin()->first; }
+    double best_ask() const { return asks.empty()?0:asks.begin()->first; }
+    double spread()   const { return best_ask()-best_bid(); }
+};
+
+// Python prototype (sortedcontainers):
+# from sortedcontainers import SortedDict
+# bids = SortedDict(lambda k: -k)  # descending`,
+        note: "This std::map approach is O(log n) per add/cancel. Production HFT uses integer tick prices with array-indexed price levels + doubly-linked list per level, achieving O(1) add/cancel. The sorted map is correct and a good interview implementation."
+      }
+    ],
+    questions: [
+      { type:"mc", q:"Default ordering of std::priority_queue<int> in C++?", options:["Min-heap","Max-heap","FIFO","Insertion order"], correct:1, explanation:"std::priority_queue is a max-heap by default. For min-heap use std::priority_queue<int,std::vector<int>,std::greater<int>>." },
+      { type:"mc", q:"Why is SoA (Structure of Arrays) faster than AoS for computing VWAP?", options:["SoA uses less memory","Sequential price scan maximizes cache utilization; AoS interleaves unrelated fields","AoS requires locks","SoA is stack-allocated"], correct:1, explanation:"Processing one field across all records in SoA = linear scan of contiguous memory. AoS interleaves fields, wasting cache bandwidth loading irrelevant data." },
+      { type:"mc", q:"alignas(64) on an atomic member achieves what?", options:["Pads struct to 64 bytes","Places member on its own cache line, preventing false sharing","Makes access 64× faster","Converts to 64-bit integer"], correct:1, explanation:"Cache lines are 64 bytes. alignas(64) ensures the variable occupies its own cache line. Without it, two atomics on the same cache line cause false sharing — threads invalidate each other's caches." },
+      { type:"mc", q:"memory_order_release on write, memory_order_acquire on read guarantees?", options:["Faster than mutex","All writes before release visible to thread after acquire","Thread-safe for multiple producers","Wait-free operations"], correct:1, explanation:"release-acquire creates a happens-before relationship: writes before release store are visible to any thread that subsequently performs an acquire load of the same variable." },
+      { type:"mc", q:"In the C++ order book, best_bid() using std::map is what complexity?", options:["O(n)","O(log n)","O(1)","O(n log n)"], correct:2, explanation:"std::map::begin() returns an iterator to the smallest key in O(1). With std::greater comparator, this is the largest bid price. O(1)." }
+    ]
+  }
+];
+
 // ─── APP ───
 export default function App() {
   const [activeTab, setActiveTab] = useState("mental");
@@ -167,11 +1527,12 @@ export default function App() {
   const tabs = [
     { key: "mental", label: "Mental Math" },
     { key: "hard", label: "Problem Bank" },
+    { key: "learn", label: "Learn" },
     { key: "resources", label: "Resources" },
   ];
 
   return (
-    <div style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", background: "#0a0a0f", color: "#d4d4d8", minHeight: "100vh" }}>
+    <div style={{ fontFamily: "'Palatino', 'Fira Code', monospace", background: "#0a0a0f", color: "#d4d4d8", minHeight: "100vh" }}>
       <header style={{ borderBottom: "1px solid #1e1e2e", padding: "16px 24px", display: "flex", alignItems: "center", gap: 24, background: "#0d0d14" }}>
         <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700, color: "#f0f0f5", margin: 0, letterSpacing: "-0.5px" }}>
           <span style={{ color: "#6366f1" }}>Q</span>uant <span style={{ color: "#6366f1" }}>P</span>rep
@@ -190,6 +1551,7 @@ export default function App() {
       <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
         {activeTab === "mental" && <MentalMathTab scores={scores} saveScores={saveScores} />}
         {activeTab === "hard" && <HardProblemsTab problemState={problemState} saveProblemState={saveProblemState} timeTracking={timeTracking} saveTimeTracking={saveTimeTracking} />}
+        {activeTab === "learn" && <LearnTab />}
         {activeTab === "resources" && <ResourcesTab />}
       </main>
     </div>
@@ -908,6 +2270,302 @@ function HardProblemsTab({ problemState, saveProblemState, timeTracking, saveTim
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ─── LEARN TAB ───
+const DIFFICULTY_COLOR = {
+  "Intermediate": "#6366f1",
+  "Intermediate-Hard": "#f59e0b",
+  "Hard": "#ef4444",
+  "Advanced": "#ec4899",
+};
+const CATEGORY_BADGE = {
+  "Python": "#22c55e",
+  "Algorithms": "#6366f1",
+  "Data Structures": "#0ea5e9",
+  "C++": "#f97316",
+};
+
+function LearnTab() {
+  const [selected, setSelected] = useState(null);
+  const [view, setView] = useState("learn"); // "learn" | "quiz"
+  const [quizProgress, setQuizProgress] = useState({}); // moduleId -> {score, total, done}
+
+  if (selected) {
+    const mod = LEARN_MODULES.find(m => m.id === selected);
+    return (
+      <ModuleDetail
+        mod={mod}
+        view={view}
+        setView={setView}
+        quizProgress={quizProgress}
+        setQuizProgress={setQuizProgress}
+        onBack={() => setSelected(null)}
+      />
+    );
+  }
+
+  const categories = [...new Set(LEARN_MODULES.map(m => m.category))];
+
+  return (
+    <div>
+      <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: 24, color: "#f0f0f5", marginBottom: 4 }}>Learn</h2>
+      <p style={{ fontSize: 13, color: "#71717a", marginBottom: 32 }}>
+        Python-focused coding modules with C++ for HFT. Each module has a reading section and an interactive quiz.
+        Covers enough to solve LeetCode Hards.
+      </p>
+
+      {categories.map(cat => (
+        <div key={cat} style={{ marginBottom: 32 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: CATEGORY_BADGE[cat] || "#6366f1", display: "inline-block" }} />
+            <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: 15, color: "#a1a1aa", margin: 0, letterSpacing: "0.5px", textTransform: "uppercase", fontSize: 12 }}>{cat}</h3>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+            {LEARN_MODULES.filter(m => m.category === cat).map(mod => {
+              const prog = quizProgress[mod.id];
+              const pct = prog ? Math.round((prog.score / mod.questions.length) * 100) : null;
+              return (
+                <button key={mod.id} onClick={() => { setSelected(mod.id); setView("learn"); }}
+                  style={{
+                    background: "#0d0d14", border: "1px solid #1e1e2e", borderRadius: 10,
+                    padding: "18px 20px", cursor: "pointer", fontFamily: "inherit",
+                    textAlign: "left", transition: "border-color 0.15s",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "#6366f160"}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = "#1e1e2e"}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: "#e0e0e8" }}>{mod.title}</span>
+                    <span style={{ fontSize: 11, color: DIFFICULTY_COLOR[mod.difficulty] || "#6366f1", whiteSpace: "nowrap", marginLeft: 8 }}>
+                      {mod.difficulty}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#52525b", marginBottom: 12 }}>{mod.subtitle}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, color: "#3f3f46" }}>{mod.sections.length} sections · {mod.questions.length} questions</span>
+                    {prog && (
+                      <span style={{ fontSize: 11, color: pct >= 80 ? "#22c55e" : "#eab308" }}>
+                        Quiz: {prog.score}/{mod.questions.length}
+                      </span>
+                    )}
+                  </div>
+                  {prog && (
+                    <div style={{ marginTop: 8, height: 2, background: "#1e1e2e", borderRadius: 1 }}>
+                      <div style={{ width: `${pct}%`, height: "100%", background: pct >= 80 ? "#22c55e" : "#eab308", borderRadius: 1, transition: "width 0.3s" }} />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ModuleDetail({ mod, view, setView, quizProgress, setQuizProgress, onBack }) {
+  return (
+    <div style={{ maxWidth: 820, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#6366f1", cursor: "pointer", fontFamily: "inherit", fontSize: 13, marginBottom: 20, padding: 0 }}>
+        ← All Modules
+      </button>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 4, flexWrap: "wrap" }}>
+        <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: 24, color: "#f0f0f5", margin: 0 }}>{mod.title}</h2>
+        <span style={{ fontSize: 12, color: DIFFICULTY_COLOR[mod.difficulty] }}>{mod.difficulty}</span>
+        <span style={{ fontSize: 12, color: CATEGORY_BADGE[mod.category], background: CATEGORY_BADGE[mod.category] + "15", padding: "2px 8px", borderRadius: 4 }}>{mod.category}</span>
+      </div>
+      <p style={{ fontSize: 13, color: "#71717a", marginBottom: 24 }}>{mod.subtitle}</p>
+
+      <div style={{ display: "flex", gap: 4, marginBottom: 32, borderBottom: "1px solid #1e1e2e", paddingBottom: 0 }}>
+        {["learn", "quiz"].map(v => (
+          <button key={v} onClick={() => setView(v)} style={{
+            padding: "8px 20px", background: "none", border: "none",
+            borderBottom: view === v ? "2px solid #6366f1" : "2px solid transparent",
+            color: view === v ? "#818cf8" : "#52525b",
+            cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+            marginBottom: -1, transition: "all 0.15s", textTransform: "capitalize"
+          }}>{v === "learn" ? "Reading" : "Quiz"}</button>
+        ))}
+      </div>
+
+      {view === "learn" ? (
+        <LearnSection mod={mod} />
+      ) : (
+        <QuizSection mod={mod} quizProgress={quizProgress} setQuizProgress={setQuizProgress} />
+      )}
+    </div>
+  );
+}
+
+function LearnSection({ mod }) {
+  const [expanded, setExpanded] = useState(new Set([0]));
+
+  function toggle(i) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  }
+
+  return (
+    <div>
+      {mod.sections.map((sec, i) => (
+        <div key={i} style={{ marginBottom: 16, border: "1px solid #1e1e2e", borderRadius: 10, overflow: "hidden" }}>
+          <button onClick={() => toggle(i)} style={{
+            width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "14px 18px", background: expanded.has(i) ? "#0f0f1a" : "#0d0d14",
+            border: "none", cursor: "pointer", fontFamily: "inherit",
+          }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: "#e0e0e8", textAlign: "left" }}>{sec.title}</span>
+            <span style={{ color: "#52525b", fontSize: 16, flexShrink: 0, marginLeft: 8 }}>{expanded.has(i) ? "▾" : "▸"}</span>
+          </button>
+          {expanded.has(i) && (
+            <div style={{ padding: "0 20px 20px", background: "#0d0d14" }}>
+              <p style={{ fontSize: 14, lineHeight: 1.75, color: "#a1a1aa", marginBottom: 16, marginTop: 16 }}>{sec.content}</p>
+              <pre style={{
+                background: "#070710", border: "1px solid #1a1a2e", borderRadius: 8,
+                padding: "16px 18px", overflowX: "auto", fontSize: 12.5,
+                lineHeight: 1.7, color: "#c9d1d9", fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                margin: 0, whiteSpace: "pre",
+              }}>{sec.code}</pre>
+              {sec.note && (
+                <div style={{ marginTop: 14, padding: "10px 14px", background: "#6366f108", border: "1px solid #6366f125", borderRadius: 8, fontSize: 13, color: "#818cf8", lineHeight: 1.6 }}>
+                  <span style={{ fontWeight: 600, marginRight: 4 }}>Note:</span>{sec.note}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function QuizSection({ mod, quizProgress, setQuizProgress }) {
+  const [questions] = useState(() => {
+    const q = [...mod.questions];
+    for (let i = q.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [q[i], q[j]] = [q[j], q[i]];
+    }
+    return q;
+  });
+  const [idx, setIdx] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [revealed, setRevealed] = useState(false);
+  const [score, setScore] = useState(0);
+  const [done, setDone] = useState(false);
+
+  const q = questions[idx];
+
+  function handleSelect(optIdx) {
+    if (revealed) return;
+    setSelected(optIdx);
+  }
+
+  function handleSubmit() {
+    if (selected === null) return;
+    setRevealed(true);
+    if (selected === q.correct) setScore(s => s + 1);
+  }
+
+  function handleNext() {
+    if (idx + 1 >= questions.length) {
+      const finalScore = score + (selected === q.correct ? 1 : 0);
+      setQuizProgress(prev => ({ ...prev, [mod.id]: { score: finalScore, total: questions.length } }));
+      setDone(true);
+    } else {
+      setIdx(i => i + 1);
+      setSelected(null);
+      setRevealed(false);
+    }
+  }
+
+  function restart() {
+    setIdx(0); setSelected(null); setRevealed(false); setScore(0); setDone(false);
+  }
+
+  if (done) {
+    const finalScore = quizProgress[mod.id]?.score ?? score;
+    const pct = Math.round((finalScore / questions.length) * 100);
+    return (
+      <div style={{ textAlign: "center", padding: "40px 0" }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>{pct >= 80 ? "🎯" : pct >= 60 ? "📈" : "📚"}</div>
+        <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: 24, color: "#f0f0f5", marginBottom: 8 }}>
+          {finalScore} / {questions.length}
+        </h3>
+        <p style={{ fontSize: 14, color: "#71717a", marginBottom: 32 }}>
+          {pct >= 80 ? "Excellent — you've got this module down." : pct >= 60 ? "Good progress. Review the sections you missed." : "Keep studying — re-read the sections, then retry."}
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <button onClick={restart} style={{ padding: "10px 24px", borderRadius: 8, border: "1px solid #6366f1", background: "#6366f115", color: "#818cf8", cursor: "pointer", fontFamily: "inherit", fontSize: 13 }}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 680 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <span style={{ fontSize: 13, color: "#52525b" }}>Question {idx + 1} of {questions.length}</span>
+        <span style={{ fontSize: 13, color: "#22c55e" }}>{score} correct</span>
+      </div>
+
+      <div style={{ height: 3, background: "#1e1e2e", borderRadius: 2, marginBottom: 28 }}>
+        <div style={{ width: `${((idx) / questions.length) * 100}%`, height: "100%", background: "#6366f1", borderRadius: 2, transition: "width 0.3s" }} />
+      </div>
+
+      <p style={{ fontSize: 15, lineHeight: 1.7, color: "#e0e0e8", marginBottom: 24, whiteSpace: "pre-line" }}>{q.q}</p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
+        {q.options.map((opt, oi) => {
+          let bg = "#0d0d14", border = "#1e1e2e", color = "#a1a1aa";
+          if (selected === oi && !revealed) { bg = "#6366f115"; border = "#6366f1"; color = "#e0e0e8"; }
+          if (revealed) {
+            if (oi === q.correct) { bg = "#22c55e15"; border = "#22c55e"; color = "#22c55e"; }
+            else if (selected === oi && oi !== q.correct) { bg = "#ef444415"; border = "#ef4444"; color = "#ef4444"; }
+          }
+          return (
+            <button key={oi} onClick={() => handleSelect(oi)} style={{
+              padding: "12px 16px", borderRadius: 8, border: `1px solid ${border}`,
+              background: bg, color, cursor: revealed ? "default" : "pointer",
+              fontFamily: "inherit", fontSize: 13, textAlign: "left", transition: "all 0.15s",
+              lineHeight: 1.5,
+            }}>
+              <span style={{ color: "#52525b", marginRight: 8 }}>{String.fromCharCode(65 + oi)}.</span>
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+
+      {revealed && (
+        <div style={{ padding: "12px 16px", background: "#0f0f1a", border: "1px solid #1e1e2e", borderRadius: 8, marginBottom: 20, fontSize: 13, color: "#a1a1aa", lineHeight: 1.6 }}>
+          <span style={{ color: "#818cf8", fontWeight: 600, marginRight: 6 }}>Explanation:</span>{q.explanation}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 10 }}>
+        {!revealed ? (
+          <button onClick={handleSubmit} disabled={selected === null} style={{
+            padding: "10px 24px", borderRadius: 8, border: "1px solid #6366f1",
+            background: selected !== null ? "#6366f1" : "#6366f130", color: "#fff",
+            cursor: selected !== null ? "pointer" : "not-allowed", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+          }}>Check Answer</button>
+        ) : (
+          <button onClick={handleNext} style={{
+            padding: "10px 24px", borderRadius: 8, border: "1px solid #6366f1",
+            background: "#6366f1", color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+          }}>{idx + 1 >= questions.length ? "See Results" : "Next Question →"}</button>
+        )}
       </div>
     </div>
   );
